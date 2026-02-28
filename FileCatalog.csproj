@@ -39,5 +39,10 @@
 	<ItemGroup>
 		<AvaloniaResource Include="Assets\**" />
 	</ItemGroup>
+    
+    <ItemGroup>
+        <TrimmerRootAssembly Include="FileCatalog" />
+        <TrimmerRootAssembly Include="Dapper" />
+    </ItemGroup>
 
 </Project>
