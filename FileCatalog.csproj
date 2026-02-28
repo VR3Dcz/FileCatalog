@@ -1,0 +1,43 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net8.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>true</ImplicitUsings>
+		<BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+		<ApplicationManifest>app.manifest</ApplicationManifest>
+		<AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+
+		<SuppressTrimAnalysisWarnings>true</SuppressTrimAnalysisWarnings>
+		<NoWarn>IL2026;IL2104</NoWarn>
+
+		<ApplicationIcon>Assets\app-icon.ico</ApplicationIcon>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)' == 'Release'">
+		<PublishSingleFile>true</PublishSingleFile>
+		<IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+		<EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+		<PublishTrimmed>false</PublishTrimmed>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Avalonia" Version="11.0.6" />
+		<PackageReference Include="Avalonia.Controls.TreeDataGrid" Version="11.0.10" />
+		<PackageReference Include="Avalonia.Desktop" Version="11.0.6" />
+		<PackageReference Include="Avalonia.Themes.Fluent" Version="11.0.6" />
+		<PackageReference Include="Avalonia.Fonts.Inter" Version="11.0.6" />
+		<PackageReference Include="Avalonia.Diagnostics" Version="11.0.6" />
+		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
+		<PackageReference Include="Dapper" Version="2.1.28" />
+		<PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.2" />
+		<PackageReference Include="TagLibSharp" Version="2.3.0" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<AvaloniaResource Include="Assets\**" />
+	</ItemGroup>
+
+</Project>

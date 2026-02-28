@@ -1,0 +1,211 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:FileCatalog.ViewModels"
+        xmlns:conv="using:FileCatalog.Converters"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
+        x:Class="FileCatalog.Views.MainWindow"
+        x:Name="MainWindowRoot"
+        x:DataType="vm:MainViewModel"
+        Icon="/Assets/app-icon.ico"
+        Title="{Binding WindowTitle}"
+        WindowStartupLocation="CenterScreen"
+        Loaded="MainWindow_Loaded">
+
+	<Design.DataContext>
+		<vm:MainViewModel/>
+	</Design.DataContext>
+
+	<Window.Resources>
+		<conv:FileSizeConverter x:Key="FileSizeConverter"/>
+		<conv:TicksToDateConverter x:Key="TicksToDateConverter"/>
+		<conv:FileIconConverter x:Key="FileIconConverter"/>
+
+		<DataTemplate x:Key="NameCellTemplate" x:DataType="vm:FileSystemItemDisplay">
+			<StackPanel Orientation="Horizontal" Spacing="5" Margin="5,0,0,0">
+				<TextBlock Text="{Binding Extension, Converter={StaticResource FileIconConverter}}" FontFamily="Segoe UI Emoji, Apple Color Emoji, Noto Color Emoji, Segoe UI Symbol" VerticalAlignment="Center"/>
+				<TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
+			</StackPanel>
+		</DataTemplate>
+
+		<DataTemplate x:Key="SizeCellTemplate" x:DataType="vm:FileSystemItemDisplay">
+			<TextBlock Text="{Binding SizeBytes, Converter={StaticResource FileSizeConverter}}" VerticalAlignment="Center" Margin="5,0,0,0"/>
+		</DataTemplate>
+
+		<DataTemplate x:Key="DateCellTemplate" x:DataType="vm:FileSystemItemDisplay">
+			<TextBlock Text="{Binding ModifiedTicks, Converter={StaticResource TicksToDateConverter}}" VerticalAlignment="Center" Margin="5,0,0,0"/>
+		</DataTemplate>
+	</Window.Resources>
+
+	<Grid>
+		<DockPanel>
+			<Menu DockPanel.Dock="Top" Background="#F0F0F0">
+				<MenuItem Header="{DynamicResource MenuFile}">
+					<MenuItem Header="{DynamicResource MenuNew}" Command="{Binding NewCatalogCommand}" InputGesture="Ctrl+N" />
+					<MenuItem Header="{DynamicResource MenuOpen}" Command="{Binding OpenCatalogCommand}" InputGesture="Ctrl+O" />
+					<Separator />
+					<MenuItem Header="{DynamicResource MenuSave}" Command="{Binding SaveCatalogCommand}" InputGesture="Ctrl+S" />
+					<MenuItem Header="{DynamicResource MenuSaveAs}" Command="{Binding SaveCatalogAsCommand}" InputGesture="Ctrl+Shift+S" />
+					<Separator />
+					<MenuItem Header="{DynamicResource MenuQuit}" Command="{Binding QuitCommand}" InputGesture="Alt+F4" />
+				</MenuItem>
+
+				<MenuItem Header="{DynamicResource MenuView}">
+					<MenuItem Header="{DynamicResource MenuColumns}">
+						<MenuItem>
+							<MenuItem.Header>
+								<CheckBox Content="{DynamicResource ColPath}" IsChecked="{Binding ShowPathColumn}" />
+							</MenuItem.Header>
+						</MenuItem>
+						<MenuItem>
+							<MenuItem.Header>
+								<CheckBox Content="{DynamicResource ColExt}" IsChecked="{Binding ShowExtensionColumn}" />
+							</MenuItem.Header>
+						</MenuItem>
+						<MenuItem>
+							<MenuItem.Header>
+								<CheckBox Content="{DynamicResource ColSize}" IsChecked="{Binding ShowSizeColumn}" />
+							</MenuItem.Header>
+						</MenuItem>
+						<MenuItem>
+							<MenuItem.Header>
+								<CheckBox Content="{DynamicResource ColDate}" IsChecked="{Binding ShowModifiedDateColumn}" />
+							</MenuItem.Header>
+						</MenuItem>
+					</MenuItem>
+				</MenuItem>
+
+				<MenuItem Header="{DynamicResource MenuSettings}">
+					<MenuItem Header="{DynamicResource MenuPreferences}" Command="{Binding ToggleSettingsCommand}" />
+				</MenuItem>
+			</Menu>
+
+			<StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="10" Margin="5" Background="#F0F0F0" IsEnabled="{Binding !IsBusy}">
+				<Button Content="{DynamicResource BtnScan}" Command="{Binding ScanNewDriveCommand}" />
+				<Border BorderBrush="Gray" BorderThickness="1,0,0,0" Margin="5,2" />
+
+				<TextBox Text="{Binding SearchQuery}" Width="250" VerticalAlignment="Center">
+					<TextBox.KeyBindings>
+						<KeyBinding Gesture="Enter" Command="{Binding PerformSearchCommand}" />
+					</TextBox.KeyBindings>
+				</TextBox>
+				<CheckBox IsChecked="{Binding UseRegex}" Content="Regex" VerticalAlignment="Center"/>
+				<Button Content="{DynamicResource BtnSearch}" Command="{Binding PerformSearchCommand}" />
+			</StackPanel>
+
+			<Border DockPanel.Dock="Bottom" Background="#F0F0F0" BorderBrush="Gray" BorderThickness="0,1,0,0" Padding="5,2"
+                    DoubleTapped="StatusBar_DoubleTapped" Cursor="Hand" ToolTip.Tip="Double-click to view message history">
+				<Grid ColumnDefinitions="*, Auto">
+					<TextBlock Grid.Column="0" Text="{Binding StatusMessage}" VerticalAlignment="Center" />
+					<ProgressBar Grid.Column="1" IsIndeterminate="True" IsVisible="{Binding IsBusy}" Width="150" Height="10" Margin="10,0,0,0" />
+				</Grid>
+			</Border>
+
+			<Grid ColumnDefinitions="300, 5, *">
+
+				<TreeView Grid.Column="0" x:Name="FolderTree" ItemsSource="{Binding RootFolders}" SelectedItem="{Binding SelectedFolder}" Margin="0,0,0,0">
+					<TreeView.KeyBindings>
+						<KeyBinding Gesture="F2" Command="{Binding BeginRenameCommand}" CommandParameter="{Binding #FolderTree.SelectedItem}" />
+					</TreeView.KeyBindings>
+					<TreeView.Styles>
+						<Style Selector="TreeViewItem" x:DataType="vm:FolderNodeViewModel">
+							<Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
+						</Style>
+					</TreeView.Styles>
+					<TreeView.ItemTemplate>
+						<TreeDataTemplate ItemsSource="{Binding SubFolders}">
+							<StackPanel Orientation="Horizontal" Spacing="5" Background="Transparent">
+								<StackPanel.ContextMenu>
+									<ContextMenu>
+										<MenuItem Header="Rename (F2)" Command="{Binding #MainWindowRoot.((vm:MainViewModel)DataContext).BeginRenameCommand}" CommandParameter="{Binding}" />
+										<MenuItem Header="Rescan Drive" IsVisible="{Binding IsDriveRoot}" Command="{Binding #MainWindowRoot.((vm:MainViewModel)DataContext).RescanDriveCommand}" CommandParameter="{Binding}" />
+										<Separator IsVisible="{Binding IsDriveRoot}" />
+										<MenuItem Header="Move Up" IsVisible="{Binding IsDriveRoot}" Command="{Binding #MainWindowRoot.((vm:MainViewModel)DataContext).MoveDriveUpCommand}" CommandParameter="{Binding}" />
+										<MenuItem Header="Move Down" IsVisible="{Binding IsDriveRoot}" Command="{Binding #MainWindowRoot.((vm:MainViewModel)DataContext).MoveDriveDownCommand}" CommandParameter="{Binding}" />
+										<Separator IsVisible="{Binding IsDriveRoot}" />
+										<MenuItem Header="Remove Drive" IsVisible="{Binding IsDriveRoot}" Command="{Binding #MainWindowRoot.((vm:MainViewModel)DataContext).RemoveDriveCommand}" CommandParameter="{Binding}" Foreground="IndianRed" />
+									</ContextMenu>
+								</StackPanel.ContextMenu>
+								<TextBlock Text="📁" Foreground="#E8B042" FontFamily="Segoe UI Emoji, Apple Color Emoji, Noto Color Emoji, Segoe UI Symbol" VerticalAlignment="Center" />
+								<TextBlock Text="{Binding Name}" VerticalAlignment="Center" IsVisible="{Binding !IsEditing}" />
+								<TextBox Text="{Binding Name}" IsVisible="{Binding IsEditing}" VerticalAlignment="Center">
+									<TextBox.KeyBindings>
+										<KeyBinding Gesture="Enter" Command="{Binding #MainWindowRoot.((vm:MainViewModel)DataContext).EndRenameCommand}" CommandParameter="{Binding}" />
+									</TextBox.KeyBindings>
+								</TextBox>
+							</StackPanel>
+						</TreeDataTemplate>
+					</TreeView.ItemTemplate>
+				</TreeView>
+
+				<GridSplitter Grid.Column="1" ResizeDirection="Columns" Background="#E0E0E0"/>
+
+				<TreeDataGrid Grid.Column="2"
+                              x:Name="MainDataGrid"
+                              Source="{Binding FilesSource}"
+                              BorderThickness="1,0,0,0"
+                              BorderBrush="LightGray"
+                              DoubleTapped="MainDataGrid_DoubleTapped">
+					<TreeDataGrid.ContextMenu>
+						<ContextMenu>
+							<MenuItem Header="Calculate Folder Size" Command="{Binding CalculateFolderSizeCommand}" CommandParameter="{Binding SelectedItem}" IsVisible="{Binding SelectedItem.IsFolder, FallbackValue=False}"/>
+						</ContextMenu>
+					</TreeDataGrid.ContextMenu>
+				</TreeDataGrid>
+
+			</Grid>
+		</DockPanel>
+
+		<Border Background="#A0000000" IsVisible="{Binding IsSettingsOpen}">
+			<Border Background="White" Width="450" Height="320" CornerRadius="8" Padding="20" HorizontalAlignment="Center" VerticalAlignment="Center" BoxShadow="0 4 20 #80000000">
+				<StackPanel Spacing="15">
+					<TextBlock Text="{DynamicResource LblSettings}" FontSize="20" FontWeight="Bold" Margin="0,0,0,10"/>
+
+					<Grid ColumnDefinitions="Auto, *" Margin="0,0,0,10">
+						<TextBlock Grid.Column="0" Text="{DynamicResource SetLang}" VerticalAlignment="Center" Margin="0,0,15,0"/>
+						<ComboBox Grid.Column="1" ItemsSource="{Binding AvailableLanguages}" SelectedValue="{Binding Language, Mode=TwoWay}" SelectedValueBinding="{Binding Code}" DisplayMemberBinding="{Binding Name}" Width="150" />
+					</Grid>
+
+					<CheckBox IsChecked="{Binding AutoOpenLastCatalog}" Content="{DynamicResource SetAutoOpen}" />
+					<CheckBox IsChecked="{Binding Settings.AutoCalculateFolderSizes}" Content="{DynamicResource SetAutoCalc}" />
+					<CheckBox IsChecked="{Binding Settings.ReadId3Tags}" Content="{DynamicResource SetId3}" />
+
+					<Button Content="{DynamicResource BtnSaveClose}" Command="{Binding ToggleSettingsCommand}" HorizontalAlignment="Right" Margin="0,20,0,0" Background="#0078D7" Foreground="White" Padding="15,8" />
+				</StackPanel>
+			</Border>
+		</Border>
+
+		<Border Background="#A0000000" IsVisible="{Binding IsUnsavedWarningOpen}">
+			<Border Background="White" Width="450" Height="200" CornerRadius="8" Padding="25" HorizontalAlignment="Center" VerticalAlignment="Center" BoxShadow="0 4 20 #80000000">
+				<StackPanel Spacing="15" VerticalAlignment="Center">
+					<TextBlock Text="Unsaved Changes" FontSize="20" FontWeight="Bold" Foreground="#D83B01"/>
+					<TextBlock Text="You have unsaved changes. Do you want to save them before proceeding?" TextWrapping="Wrap" FontSize="14"/>
+
+					<StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right" Margin="0,20,0,0">
+						<Button Content="Save" Command="{Binding ConfirmUnsavedWarningCommand}" CommandParameter="Save" Background="#0078D7" Foreground="White" Width="90" HorizontalContentAlignment="Center"/>
+						<Button Content="Don't Save" Command="{Binding ConfirmUnsavedWarningCommand}" CommandParameter="Discard" Background="#E0E0E0" Width="90" HorizontalContentAlignment="Center"/>
+						<Button Content="Cancel" Command="{Binding ConfirmUnsavedWarningCommand}" CommandParameter="Cancel" Width="90" HorizontalContentAlignment="Center"/>
+					</StackPanel>
+				</StackPanel>
+			</Border>
+		</Border>
+
+		<Border Background="#A0000000" IsVisible="{Binding IsStatusHistoryOpen}">
+			<Border Background="White" Width="600" Height="400" CornerRadius="8" Padding="20" HorizontalAlignment="Center" VerticalAlignment="Center" BoxShadow="0 4 20 #80000000">
+				<Grid RowDefinitions="Auto, *, Auto">
+					<TextBlock Grid.Row="0" Text="Status Message History" FontSize="20" FontWeight="Bold" Margin="0,0,0,15"/>
+					<ListBox Grid.Row="1" ItemsSource="{Binding StatusHistory}" Margin="0,0,0,20" BorderThickness="1" BorderBrush="LightGray" CornerRadius="4">
+						<ListBox.ItemTemplate>
+							<DataTemplate>
+								<TextBlock Text="{Binding}" TextWrapping="Wrap" Margin="0,2" FontFamily="Consolas"/>
+							</DataTemplate>
+						</ListBox.ItemTemplate>
+					</ListBox>
+					<Button Grid.Row="2" Content="Close" Command="{Binding ToggleStatusHistoryCommand}" HorizontalAlignment="Right" Background="#0078D7" Foreground="White" Padding="15,8" />
+				</Grid>
+			</Border>
+		</Border>
+
+	</Grid>
+</Window>

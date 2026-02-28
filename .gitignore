@@ -1,0 +1,24 @@
+# .NET a kompilované výstupy
+bin/
+obj/
+TestResults/
+publish
+
+# Uživatelská nastavení Visual Studia / Rideru
+.vs/
+.idea/
+*.user
+*.suo
+*.userprefs
+
+# Databáze a lokální data aplikace FileCatalog
+*.kat
+*.db
+*.sqlite
+*.db-shm
+*.db-wal
+scan_errors.log
+
+# Operační systém
+.DS_Store
+Thumbs.db
