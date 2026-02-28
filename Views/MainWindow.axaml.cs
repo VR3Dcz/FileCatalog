@@ -9,6 +9,9 @@ namespace FileCatalog.Views;
 
 public partial class MainWindow : Window
 {
+    // Safety flag to prevent an infinite loop when closing via the View Model
+    private bool _isForceClosing;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -18,8 +21,11 @@ public partial class MainWindow : Window
     {
         if (DataContext is MainViewModel vm)
         {
-            // OPRAVA: Propojení povelu k ukonèení z ViewModelu s fyzickım zavøením okna
-            vm.RequestApplicationClose = () => Close();
+            vm.RequestApplicationClose = () =>
+            {
+                _isForceClosing = true;
+                Close();
+            };
             await vm.InitializeStartupAsync();
         }
     }
@@ -43,15 +49,26 @@ public partial class MainWindow : Window
         }
     }
 
-    // OPRAVA: Bezpeènı úklid pøi ukonèení aplikace (zavøení køíkem i pøes File > Quit)
+    // INTERCEPT THE OS WINDOW CLOSE BUTTON ('X')
+    protected override void OnClosing(WindowClosingEventArgs e)
+    {
+        // If the close didn't originate from our confirmed dialog and there are unsaved changes
+        if (!_isForceClosing && DataContext is MainViewModel { HasUnsavedChanges: true } vm)
+        {
+            e.Cancel = true; // Stop the OS from killing the window
+            vm.TriggerExitWarning(); // Show our custom unsaved changes warning
+            return;
+        }
+
+        base.OnClosing(e);
+    }
+
     protected override void OnClosed(EventArgs e)
     {
         base.OnClosed(e);
 
         try
         {
-            // Kritické: Uvolníme vlákna a pamìové zámky SQLite enginu, 
-            // jinak by nám operaèní systém nedovolil soubor smazat.
             Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
 
             string tempPath = Path.Combine(Path.GetTempPath(), "FileCatalog_temp.kat");
@@ -62,8 +79,7 @@ public partial class MainWindow : Window
         }
         catch
         {
-            // V pøípadì kolize (napø. probíhající antivirovı sken) mùeme chybu tiše ignorovat.
-            // Jeliko je soubor v systémovém Tempu, Windows se o jeho smazání postarají pozdìji.
+
         }
     }
 }
