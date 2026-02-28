@@ -44,7 +44,7 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Publish .NET Application
-        run: dotnet publish -c Release -r ${{ matrix.target }} --self-contained true -p:PublishTrimmed=true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o ./output
+        run: dotnet publish FileCatalog.csproj -c Release -r ${{ matrix.target }} --self-contained true -p:PublishTrimmed=true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o ./output
 
       - name: Create macOS App Bundle
         if: runner.os == 'macOS'
