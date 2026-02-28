@@ -3,17 +3,18 @@ name: Build and Release FileCatalog
 on:
   push:
     tags:
-      - 'v*' # Triggers automatically when a new version tag (e.g., v1.0.0) is pushed
-  workflow_dispatch: # Allows manual trigger from the GitHub Actions tab
+      - 'v*'
+  workflow_dispatch:
 
 permissions:
-  contents: write # Required permission to upload release assets
+  contents: write
 
 jobs:
   build:
     name: Build for ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: windows-latest
@@ -43,9 +44,8 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Publish .NET Application
-        run: dotnet publish FileCatalog/FileCatalog.csproj -c Release -r ${{ matrix.target }} --self-contained true -p:PublishTrimmed=true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o ./output
+        run: dotnet publish -c Release -r ${{ matrix.target }} --self-contained true -p:PublishTrimmed=true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o ./output
 
-      # macOS specific: Construct the native .app bundle structure
       - name: Create macOS App Bundle
         if: runner.os == 'macOS'
         run: |
@@ -76,22 +76,18 @@ jobs:
           </plist>
           EOF
 
-      # Archive the output for Windows
       - name: Archive Windows Release
         if: runner.os == 'Windows'
         run: Compress-Archive -Path ./output/* -DestinationPath FileCatalog-${{ matrix.target }}.zip
 
-      # Archive the output for Linux
       - name: Archive Linux Release
         if: runner.os == 'Linux'
         run: tar -czvf FileCatalog-${{ matrix.target }}.tar.gz -C ./output .
 
-      # Archive the output for macOS
       - name: Archive macOS Release
         if: runner.os == 'macOS'
         run: zip -r FileCatalog-${{ matrix.target }}.zip FileCatalog.app
 
-      # Upload the created archive to GitHub Releases
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
