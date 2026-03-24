@@ -1,6 +1,6 @@
 # FileCatalog
 
-FileCatalog is a high-performance, cross-platform file cataloging application built with C#, .NET 8, and Avalonia UI. It is designed to effortlessly scan, index, and search millions of files and folders across massive enterprise-grade drives without compromising memory or UI responsiveness.
+FileCatalog is a high-performance, cross-platform file cataloging application built with C#, .NET 8, and Avalonia UI. It is designed to effortlessly scan, index, and search millions of files and folders across massive drives without compromising memory or UI responsiveness.
 
 <img width="1201" height="746" alt="FileCatalog" src="https://github.com/user-attachments/assets/c3c2c3e5-2385-4131-a0fc-1d3247b5ed19" />
 
